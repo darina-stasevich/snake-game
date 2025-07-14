@@ -59,3 +59,66 @@ func NewSnake(x, y, snakeLength, moveInterval int) (*Snake, error) {
 
 	return &snake, nil
 }
+
+func (s *Snake) SetNextDirection(direction Direction) {
+	var isOpposite = false
+
+	switch direction {
+	case Up:
+		if s.Direction == Down {
+			isOpposite = true
+		}
+	case Down:
+		if s.Direction == Up {
+			isOpposite = true
+		}
+	case Left:
+		if s.Direction == Right {
+			isOpposite = true
+		}
+	case Right:
+		if s.Direction == Left {
+			isOpposite = true
+		}
+	}
+	if !isOpposite {
+		s.NextDirection = direction
+	}
+}
+
+func (s *Snake) Grow() {
+	panic("implement me")
+}
+
+func (s *Snake) Update() {
+	s.moveTimer++
+	if s.moveTimer < s.moveInterval {
+		return
+	}
+	s.moveTimer = 0
+	s.move()
+}
+
+func (s *Snake) move() {
+	s.Direction = s.NextDirection
+	oldHead := s.Body[0]
+	newHeadPos := oldHead.Position
+	switch s.Direction {
+	case Up:
+		newHeadPos.Y--
+	case Left:
+		newHeadPos.X--
+	case Down:
+		newHeadPos.Y++
+	case Right:
+		newHeadPos.X++
+	}
+	newHead := SnakeSegment{newHeadPos}
+	s.Body = append([]SnakeSegment{newHead}, s.Body...)
+
+	if s.AteApple {
+		s.AteApple = false
+	} else {
+		s.Body = s.Body[0 : len(s.Body)-1]
+	}
+}

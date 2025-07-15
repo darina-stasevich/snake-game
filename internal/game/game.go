@@ -135,11 +135,11 @@ func (g *Game) checkCollisions() error {
 		}
 	}
 
-	if g.snake.Body[0].X < 0 || g.snake.Body[0].X > g.cfg.ScreenWidth/g.cfg.TileSize {
+	if g.snake.Body[0].X < 0 || g.snake.Body[0].X >= g.cfg.ScreenWidth/g.cfg.TileSize {
 		g.snake.IsAlive = false
 		g.logger.Info("snake crashed in border")
 	}
-	if g.snake.Body[0].Y < 0 || g.snake.Body[0].Y > g.cfg.ScreenHeight/g.cfg.TileSize {
+	if g.snake.Body[0].Y < 0 || g.snake.Body[0].Y >= g.cfg.ScreenHeight/g.cfg.TileSize {
 		g.snake.IsAlive = false
 		g.logger.Info("snake crashed in border")
 	}

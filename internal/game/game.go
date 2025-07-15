@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"image/color"
 	"log/slog"
+	"math"
 	"math/rand/v2"
 	"snake-game/internal/assets"
 	"snake-game/internal/config"
@@ -170,33 +171,140 @@ func (g *Game) checkCollisions() error {
 	return nil
 }
 
+func getDirection(first Position, second Position) Direction {
+	if first.X == second.X {
+		if first.Y < second.Y {
+			return Up
+		} else {
+			return Down
+		}
+	} else {
+		if first.X < second.X {
+			return Left
+		} else {
+			return Right
+		}
+	}
+}
+
+func directionToRotationAngle(direction Direction) (rotation float64) {
+	switch direction {
+	case Right:
+		rotation = 0
+	case Left:
+		rotation = math.Pi
+	case Up:
+		rotation = 3 * math.Pi / 2
+	case Down:
+		rotation = math.Pi / 2
+	}
+	return
+}
+
+func cornerToRotationAngle(oldDirection Direction, newDirection Direction) (rotation float64) {
+	switch oldDirection {
+	case Right:
+		{
+			if newDirection == Up {
+				rotation = 0
+			} else {
+				rotation = 3 * math.Pi / 2
+			}
+		}
+	case Left:
+		if newDirection == Up {
+			rotation = math.Pi / 2
+		} else {
+			rotation = math.Pi
+		}
+	case Up:
+		if newDirection == Left {
+			rotation = 3 * math.Pi / 2
+		} else {
+			rotation = math.Pi
+		}
+	case Down:
+		if newDirection == Left {
+			rotation = 0
+		} else {
+			rotation = math.Pi / 2
+		}
+	}
+	return
+}
+
+func (g *Game) drawSnake(screen *ebiten.Image) {
+	for i, segment := range g.snake.Body {
+
+		var (
+			img      *ebiten.Image
+			rotation float64
+		)
+
+		if i == 0 {
+			img = g.assets.SnakeHead
+			rotation = directionToRotationAngle(g.snake.Direction)
+
+		} else if i == len(g.snake.Body)-1 {
+			img = g.assets.SnakeTail
+			direction := getDirection(g.snake.Body[i-1].Position, segment.Position)
+			rotation = directionToRotationAngle(direction)
+
+		} else {
+			newDirection := getDirection(g.snake.Body[i-1].Position, segment.Position)
+			oldDirection := getDirection(segment.Position, g.snake.Body[i+1].Position)
+			if newDirection == oldDirection {
+				img = g.assets.SnakeBody
+				rotation = directionToRotationAngle(oldDirection)
+			} else {
+				img = g.assets.SnakeBodyCorner
+				rotation = cornerToRotationAngle(oldDirection, newDirection)
+			}
+		}
+
+		if img != nil {
+			op := &ebiten.DrawImageOptions{}
+
+			originalWidth := img.Bounds().Dx()
+			originalHeight := img.Bounds().Dy()
+
+			var scaleX, scaleY float64
+			if originalWidth > 0 {
+				scaleX = float64(g.cfg.TileSize) / float64(originalWidth)
+			}
+			if originalHeight > 0 {
+				scaleY = float64(g.cfg.TileSize) / float64(originalHeight)
+			}
+
+			op.GeoM.Scale(scaleX, scaleY)
+			op.GeoM.Translate(-float64(g.cfg.TileSize)/2, -float64(g.cfg.TileSize)/2)
+
+			op.GeoM.Rotate(rotation)
+
+			op.GeoM.Translate(float64(segment.X*g.cfg.TileSize)+float64(g.cfg.TileSize)/2, float64(segment.Y*g.cfg.TileSize)+float64(g.cfg.TileSize)/2)
+
+			screen.DrawImage(img, op)
+		}
+	}
+}
+
+func (g *Game) drawFood(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(g.food.Position.X*g.cfg.TileSize), float64(g.food.Position.Y*g.cfg.TileSize))
+	img := g.assets.Apple
+	screen.DrawImage(img, op)
+
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 
 	screen.Fill(color.NRGBA{R: 0x10, G: 0x10, B: 0x10, A: 0xff})
 
 	if g.snake.IsAlive {
-		for i, segment := range g.snake.Body {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(segment.Position.X*g.cfg.TileSize), float64(segment.Position.Y*g.cfg.TileSize))
-
-			img := g.assets.SnakeBody
-			if i == 0 {
-				img = g.assets.SnakeHead
-				// TODO: Поворачивать голову в зависимости от направления
-			}
-			if i == len(g.snake.Body)-1 {
-				// TODO: img = g.assets.SnakeTail
-				// TODO: Поворачивать хвост в зависимости от состояния
-			}
-			// TODO: поворачивать тело в зависимости от положения
-			screen.DrawImage(img, op)
-		}
+		g.drawSnake(screen)
 	}
 
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(g.food.Position.X*g.cfg.TileSize), float64(g.food.Position.Y*g.cfg.TileSize))
-	img := g.assets.Apple
-	screen.DrawImage(img, op)
+	g.drawFood(screen)
 
 	// TODO: Рисовать стены, счет
 }

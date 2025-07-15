@@ -4,18 +4,19 @@ import (
 	"fmt"
 	"image/color"
 	_ "image/png" // Для поддержки формата PNG
+	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-// Assets хранит все загруженные игровые ресурсы.
-// Пока добавим только базовые, потом можно будет расширить.
 type Assets struct {
-	SnakeHead *ebiten.Image
-	SnakeBody *ebiten.Image
-	Apple     *ebiten.Image
-	Wall      *ebiten.Image
+	SnakeHead       *ebiten.Image
+	SnakeBody       *ebiten.Image
+	SnakeBodyCorner *ebiten.Image
+	SnakeTail       *ebiten.Image
+	Apple           *ebiten.Image
+	Wall            *ebiten.Image
 }
 
 func loadImage(path string) (*ebiten.Image, error) {
@@ -26,23 +27,29 @@ func loadImage(path string) (*ebiten.Image, error) {
 	return img, nil
 }
 
-// Load загружает все игровые ассеты.
-// Пути к файлам должны быть правильными.
-func Load() (*Assets, error) {
-	// var err error
+func Load(skin string) (*Assets, error) {
+	var err error
 	assets := &Assets{}
 
-	// Предполагается, что у вас есть эти файлы в папке internal/assets/images/
-	// assets.SnakeHead, err = loadImage("internal/assets/images/head.png")
-	// if err != nil { return nil, err }
-	// ... и так далее для остальных
+	skinPath := filepath.Join("internal", "assets", "images", skin)
 
-	// ЗАГЛУШКА: Если картинок пока нет, создадим их программно
-	// Когда у вас появятся файлы, замените этот блок на загрузку.
-	assets.SnakeHead = ebiten.NewImage(20, 20)
-	assets.SnakeHead.Fill(color.RGBA{R: 0, G: 0xff, B: 0, A: 0xff}) // Зеленая голова
-	assets.SnakeBody = ebiten.NewImage(20, 20)
-	assets.SnakeBody.Fill(color.RGBA{R: 0, G: 0xcc, B: 0, A: 0xff}) // Тело чуть темнее
+	assets.SnakeHead, err = loadImage(filepath.Join(skinPath, "head.png"))
+	if err != nil {
+		return nil, err
+	}
+	assets.SnakeBody, err = loadImage(filepath.Join(skinPath, "body.png"))
+	if err != nil {
+		return nil, err
+	}
+	assets.SnakeBodyCorner, err = loadImage(filepath.Join(skinPath, "body_corner.png"))
+	if err != nil {
+		return nil, err
+	}
+	assets.SnakeTail, err = loadImage(filepath.Join(skinPath, "tail.png"))
+	if err != nil {
+		return nil, err
+	}
+
 	assets.Apple = ebiten.NewImage(20, 20)
 	assets.Apple.Fill(color.RGBA{R: 0xff, G: 0, B: 0, A: 0xff}) // Красное яблоко
 	assets.Wall = ebiten.NewImage(20, 20)

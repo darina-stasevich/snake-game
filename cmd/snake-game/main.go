@@ -29,7 +29,7 @@ func main() {
 	cfg.SetLogger(logger)
 
 	// 2. Загружаем ассеты (картинки, шрифты)
-	assets, err := assets.Load()
+	assets, err := assets.Load("snake")
 	if err != nil {
 		logger.Error("Failed to initialize assets", "err", err)
 		os.Exit(1)

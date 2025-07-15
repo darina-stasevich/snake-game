@@ -19,7 +19,7 @@ func LoadConfig() *Config {
 	return &Config{
 		ScreenWidth:           480,
 		ScreenHeight:          360,
-		TileSize:              20,
+		TileSize:              60,
 		InitialSnakeLen:       2,
 		InitialSpeed:          45,
 		SpeedIncreaseInterval: 5,

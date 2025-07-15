@@ -26,8 +26,7 @@ type Snake struct {
 	Direction     Direction
 	NextDirection Direction
 
-	IsAlive  bool
-	AteApple bool
+	IsAlive bool
 
 	moveInterval int
 	moveTimer    int
@@ -39,7 +38,7 @@ func NewSnake(x, y, snakeLength, moveInterval int) (*Snake, error) {
 	}
 
 	if moveInterval <= 0 {
-		return nil, fmt.Errorf("invalid move interval: expected positive value, received %d", moveInterval)
+		return nil, fmt.Errorf("invalid extendForward interval: expected positive value, received %d", moveInterval)
 	}
 
 	body := make([]SnakeSegment, snakeLength)
@@ -52,7 +51,6 @@ func NewSnake(x, y, snakeLength, moveInterval int) (*Snake, error) {
 		Direction:     Right,
 		NextDirection: Right,
 		IsAlive:       true,
-		AteApple:      false,
 		moveInterval:  moveInterval,
 		moveTimer:     0,
 	}
@@ -86,20 +84,17 @@ func (s *Snake) SetNextDirection(direction Direction) {
 	}
 }
 
-func (s *Snake) Grow() {
-	panic("implement me")
-}
-
-func (s *Snake) Update() {
+func (s *Snake) Update() bool {
 	s.moveTimer++
 	if s.moveTimer < s.moveInterval {
-		return
+		return false
 	}
 	s.moveTimer = 0
-	s.move()
+	s.extendForward()
+	return true
 }
 
-func (s *Snake) move() {
+func (s *Snake) extendForward() {
 	s.Direction = s.NextDirection
 	oldHead := s.Body[0]
 	newHeadPos := oldHead.Position
@@ -115,10 +110,16 @@ func (s *Snake) move() {
 	}
 	newHead := SnakeSegment{newHeadPos}
 	s.Body = append([]SnakeSegment{newHead}, s.Body...)
+}
 
-	if s.AteApple {
-		s.AteApple = false
-	} else {
+func (s *Snake) cutTail() error {
+	if len(s.Body) > 1 {
 		s.Body = s.Body[0 : len(s.Body)-1]
+		return nil
 	}
+	return fmt.Errorf("invalid command: can't cut tail of snake with size less than 2")
+}
+
+func (s *Snake) DecreaseMoveInterval(x int) {
+	s.moveInterval = max(s.moveInterval-x, 1)
 }

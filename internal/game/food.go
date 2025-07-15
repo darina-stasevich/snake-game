@@ -1,11 +1,9 @@
 package game
 
-import "github.com/hajimehoshi/ebiten/v2"
-
 type Food struct {
-	GameObject
+	Position
 }
 
-func NewFood(x, y int, img *ebiten.Image) *Food {
-	return &Food{GameObject: GameObject{Position: Position{X: x, Y: y}, Img: img}}
+func NewFood(x, y int) *Food {
+	return &Food{Position: Position{X: x, Y: y}}
 }

@@ -13,6 +13,7 @@ type Config struct {
 	InitialSpeed          int
 	SpeedIncreaseInterval int
 	SpeedIncreaseAmount   int
+	MaxSpeed              int
 	Logger                *slog.Logger
 }
 
@@ -26,9 +27,14 @@ func LoadConfig() *Config {
 		InitialSpeed:          30,
 		SpeedIncreaseInterval: 5,
 		SpeedIncreaseAmount:   5,
+		MaxSpeed:              5,
 	}
 }
 
 func (config *Config) SetLogger(logger *slog.Logger) {
 	config.Logger = logger
+}
+
+func (config *Config) WindowHeight() int {
+	return config.TopBarHeight + config.ScreenHeight
 }

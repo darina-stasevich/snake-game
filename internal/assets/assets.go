@@ -2,14 +2,14 @@ package assets
 
 import (
 	"embed"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 	"image"
 	"image/color"
-	_ "image/png" // Для поддержки формата PNG
+	_ "image/png"
 	"path/filepath"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 //go:embed images/* fonts/*
@@ -24,6 +24,8 @@ type Assets struct {
 	Wall            *ebiten.Image
 
 	UIFont font.Face
+
+	WhitePixel *ebiten.Image
 }
 
 func loadImage(path string) (*ebiten.Image, error) {
@@ -46,6 +48,7 @@ func Load(skin string) (*Assets, error) {
 
 	skinPath := filepath.Join("images", skin)
 
+	// --- Загрузка изображений (без изменений) ---
 	assets.SnakeHead, err = loadImage(filepath.Join(skinPath, "head.png"))
 	if err != nil {
 		return nil, err
@@ -62,11 +65,12 @@ func Load(skin string) (*Assets, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	assets.Apple, err = loadImage(filepath.Join(skinPath, "food.png"))
-
+	if err != nil {
+		return nil, err
+	}
 	assets.Wall = ebiten.NewImage(20, 20)
-	assets.Wall.Fill(color.RGBA{R: 0x88, G: 0x88, B: 0x88, A: 0xff}) // Серая стена
+	assets.Wall.Fill(color.RGBA{R: 0x88, G: 0x88, B: 0x88, A: 0xff})
 
 	fontData, err := assetsFS.ReadFile("fonts/PressStart2P-Regular.ttf")
 	if err != nil {
@@ -87,6 +91,10 @@ func Load(skin string) (*Assets, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	pixelImg := ebiten.NewImage(1, 1)
+	pixelImg.Fill(color.White)
+	assets.WhitePixel = pixelImg
 
 	return assets, nil
 }

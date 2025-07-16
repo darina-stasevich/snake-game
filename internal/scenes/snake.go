@@ -1,38 +1,31 @@
-package game
+package scenes
 
 import (
 	"fmt"
-)
-
-type Direction int
-
-const (
-	Up Direction = iota
-	Down
-	Left
-	Right
+	"snake-game/internal/core"
 )
 
 type SnakeSegment struct {
-	Position
+	core.Position
 }
 
 func NewSnakeSegment(x, y int) *SnakeSegment {
-	return &SnakeSegment{Position{X: x, Y: y}}
+	return &SnakeSegment{core.Position{X: x, Y: y}}
 }
 
 type Snake struct {
 	Body          []SnakeSegment
-	Direction     Direction
-	NextDirection Direction
+	Direction     core.Direction
+	NextDirection core.Direction
 
 	IsAlive bool
 
-	moveInterval int
-	moveTimer    int
+	minMoveInterval int
+	moveInterval    int
+	moveTimer       int
 }
 
-func NewSnake(x, y, snakeLength, moveInterval int) (*Snake, error) {
+func NewSnake(x, y, snakeLength, moveInterval, minMoveInterval int) (*Snake, error) {
 	if snakeLength < 2 {
 		return nil, fmt.Errorf("invalid snake size: expected greater than 1, received %d", snakeLength)
 	}
@@ -47,35 +40,36 @@ func NewSnake(x, y, snakeLength, moveInterval int) (*Snake, error) {
 	}
 
 	snake := Snake{
-		Body:          body,
-		Direction:     Right,
-		NextDirection: Right,
-		IsAlive:       true,
-		moveInterval:  moveInterval,
-		moveTimer:     0,
+		Body:            body,
+		Direction:       core.Right,
+		NextDirection:   core.Right,
+		IsAlive:         true,
+		moveInterval:    moveInterval,
+		minMoveInterval: minMoveInterval,
+		moveTimer:       0,
 	}
 
 	return &snake, nil
 }
 
-func (s *Snake) SetNextDirection(direction Direction) {
+func (s *Snake) SetNextDirection(direction core.Direction) {
 	var isOpposite = false
 
 	switch direction {
-	case Up:
-		if s.Direction == Down {
+	case core.Up:
+		if s.Direction == core.Down {
 			isOpposite = true
 		}
-	case Down:
-		if s.Direction == Up {
+	case core.Down:
+		if s.Direction == core.Up {
 			isOpposite = true
 		}
-	case Left:
-		if s.Direction == Right {
+	case core.Left:
+		if s.Direction == core.Right {
 			isOpposite = true
 		}
-	case Right:
-		if s.Direction == Left {
+	case core.Right:
+		if s.Direction == core.Left {
 			isOpposite = true
 		}
 	}
@@ -99,13 +93,13 @@ func (s *Snake) extendForward() {
 	oldHead := s.Body[0]
 	newHeadPos := oldHead.Position
 	switch s.Direction {
-	case Up:
+	case core.Up:
 		newHeadPos.Y--
-	case Left:
+	case core.Left:
 		newHeadPos.X--
-	case Down:
+	case core.Down:
 		newHeadPos.Y++
-	case Right:
+	case core.Right:
 		newHeadPos.X++
 	}
 	newHead := SnakeSegment{newHeadPos}
@@ -121,5 +115,5 @@ func (s *Snake) cutTail() error {
 }
 
 func (s *Snake) DecreaseMoveInterval(x int) {
-	s.moveInterval = max(s.moveInterval-x, 1)
+	s.moveInterval = max(s.moveInterval-x, s.minMoveInterval)
 }

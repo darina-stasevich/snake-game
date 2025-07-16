@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text"
 	"image/color"
 	"log/slog"
 	"math"
 	"math/rand/v2"
 	"snake-game/internal/assets"
 	"snake-game/internal/config"
+	"time"
 )
 
 type Game struct {
@@ -19,8 +21,11 @@ type Game struct {
 	food   *Food
 	walls  []Wall
 
-	score int
-	ticks int
+	score    int
+	ticks    int
+	gameTime time.Duration
+
+	whitePixelImage *ebiten.Image
 
 	logger *slog.Logger
 }
@@ -44,6 +49,10 @@ func NewGame(cfg *config.Config, assets *assets.Assets) (*Game, error) {
 				"initial_speed", cfg.InitialSpeed,
 			),
 		)
+
+		g.whitePixelImage = ebiten.NewImage(1, 1)
+		g.whitePixelImage.Fill(color.White)
+
 	}
 	return g, nil
 }
@@ -64,6 +73,7 @@ func (g *Game) Reset() error {
 
 	g.score = 0
 	g.ticks = 0
+	g.gameTime = 0
 	g.spawnFood()
 	// TODO: g.loadLevel(1)
 
@@ -78,6 +88,7 @@ func (g *Game) Update() error {
 	}
 
 	g.ticks++
+	g.gameTime += time.Second / time.Duration(ebiten.TPS())
 	g.handleInput()
 	moved := g.snake.Update()
 	if moved {
@@ -281,7 +292,7 @@ func (g *Game) drawSnake(screen *ebiten.Image) {
 
 			op.GeoM.Rotate(rotation)
 
-			op.GeoM.Translate(float64(segment.X*g.cfg.TileSize)+float64(g.cfg.TileSize)/2, float64(segment.Y*g.cfg.TileSize)+float64(g.cfg.TileSize)/2)
+			op.GeoM.Translate(float64(segment.X*g.cfg.TileSize)+float64(g.cfg.TileSize)/2, float64(segment.Y*g.cfg.TileSize)+float64(g.cfg.TileSize)/2+float64(g.cfg.TopBarHeight))
 
 			screen.DrawImage(img, op)
 		}
@@ -290,7 +301,7 @@ func (g *Game) drawSnake(screen *ebiten.Image) {
 
 func (g *Game) drawFood(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(g.food.Position.X*g.cfg.TileSize), float64(g.food.Position.Y*g.cfg.TileSize))
+	op.GeoM.Translate(float64(g.food.Position.X*g.cfg.TileSize), float64(g.food.Position.Y*g.cfg.TileSize)+float64(g.cfg.TopBarHeight))
 	img := g.assets.Apple
 	screen.DrawImage(img, op)
 
@@ -300,15 +311,28 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	screen.Fill(color.NRGBA{R: 0x10, G: 0x10, B: 0x10, A: 0xff})
 
+	topBarHeight := float64(g.cfg.TopBarHeight)
+
+	opBar := &ebiten.DrawImageOptions{}
+	opBar.GeoM.Scale(float64(g.cfg.ScreenWidth), topBarHeight) // Растягиваем 1x1 пиксель
+	screen.DrawImage(g.whitePixelImage, opBar)
+
+	scoreStr := fmt.Sprintf("SCORE: %d", g.score)
+	seconds := int(g.gameTime.Seconds())
+	timeStr := fmt.Sprintf("TIME: %02d:%02d", seconds/60, seconds%60)
+
+	text.Draw(screen, scoreStr, g.assets.UIFont, 10, 25, color.Black)
+	text.Draw(screen, timeStr, g.assets.UIFont, g.cfg.ScreenWidth-200, 25, color.Black)
+
 	if g.snake.IsAlive {
 		g.drawSnake(screen)
 	}
 
 	g.drawFood(screen)
 
-	// TODO: Рисовать стены, счет
+	// TODO: Рисовать стены
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return g.cfg.ScreenWidth, g.cfg.ScreenHeight
+	return g.cfg.ScreenWidth, g.cfg.ScreenHeight + g.cfg.TopBarHeight
 }

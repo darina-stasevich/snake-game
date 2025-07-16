@@ -36,6 +36,4 @@ WORKDIR /app
 
 COPY --from=builder /app/snake-game .
 
-COPY internal/assets ./assets
-
 CMD ["./snake-game"]

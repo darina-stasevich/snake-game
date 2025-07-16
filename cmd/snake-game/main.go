@@ -47,7 +47,7 @@ func main() {
 	}
 
 	// 4. Настраиваем и запускаем окно
-	ebiten.SetWindowSize(cfg.ScreenWidth, cfg.ScreenHeight)
+	ebiten.SetWindowSize(cfg.ScreenWidth, cfg.ScreenHeight+cfg.TopBarHeight)
 	ebiten.SetWindowTitle("Змейка на Ebitengine")
 
 	if err := ebiten.RunGame(g); err != nil {

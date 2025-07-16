@@ -7,6 +7,7 @@ import (
 type Config struct {
 	ScreenWidth           int
 	ScreenHeight          int
+	TopBarHeight          int
 	TileSize              int
 	InitialSnakeLen       int
 	InitialSpeed          int
@@ -17,11 +18,12 @@ type Config struct {
 
 func LoadConfig() *Config {
 	return &Config{
-		ScreenWidth:           480,
-		ScreenHeight:          360,
-		TileSize:              60,
+		ScreenWidth:           2400,
+		ScreenHeight:          1200,
+		TopBarHeight:          30,
+		TileSize:              120,
 		InitialSnakeLen:       2,
-		InitialSpeed:          45,
+		InitialSpeed:          30,
 		SpeedIncreaseInterval: 5,
 		SpeedIncreaseAmount:   5,
 	}

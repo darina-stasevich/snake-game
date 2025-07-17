@@ -16,6 +16,7 @@ docker build -t snake-game:latest .
 
 (for Linux using Wayland)
 ```bash
+xhost +local:
 docker run -it --rm --net=host -e DISPLAY=$DISPLAY -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY snake-game:latest
 ```
 (for Linux using X11)

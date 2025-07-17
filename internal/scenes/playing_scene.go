@@ -8,20 +8,28 @@ import (
 	"image/color"
 	"math/rand/v2"
 	"snake-game/internal/core"
+	"snake-game/internal/ui"
 )
 
 type PlayingScene struct {
-	snake *Snake
-	food  *Food
-	walls []Wall
+	snake *core.Snake
+	food  *core.Food
+	walls []core.Wall
+
+	level *core.Level
 
 	whitePixelImage *ebiten.Image
 
 	accessor GameAccessor
 }
 
-func NewPlayingScene(accessor GameAccessor) (*PlayingScene, error) {
-	scene := &PlayingScene{accessor: accessor}
+func NewPlayingScene(accessor GameAccessor, level *core.Level) (*PlayingScene, error) {
+	scene := &PlayingScene{
+		accessor: accessor,
+		level:    level,
+		walls:    level.Walls,
+	}
+
 	err := scene.Reset()
 	if err != nil {
 		return nil, err
@@ -30,37 +38,29 @@ func NewPlayingScene(accessor GameAccessor) (*PlayingScene, error) {
 }
 
 func (p *PlayingScene) Reset() error {
+	p.accessor.Logger().Info("playing scene  resetting...")
 	cfg := p.accessor.Config()
+	level := p.level
 	var err error
-	p.snake, err = NewSnake(cfg.ScreenWidth/2, cfg.ScreenHeight/2, cfg.InitialSnakeLen, cfg.InitialSpeed, cfg.MaxSpeed)
-	if err != nil {
-		p.accessor.Logger().Error("failed create snake")
-		return err
-	}
 
 	startPos := core.Position{
-		X: (cfg.ScreenWidth / cfg.TileSize) / 2,
-		Y: (cfg.ScreenHeight / cfg.TileSize) / 2,
+		X: level.GridWidth / 2,
+		Y: level.GridHeight / 2,
 	}
 
-	snake, err := NewSnake(startPos.X, startPos.Y, cfg.InitialSnakeLen, cfg.InitialSpeed, cfg.MaxSpeed)
+	snake, err := core.NewSnake(startPos.X, startPos.Y, cfg.InitialSnakeLen, cfg.InitialSpeed, cfg.MaxSpeed)
 	if err != nil {
-		p.accessor.Logger().Error("failed to create snake", "error", err)
+		p.accessor.Logger().Error("FATAL: failed to create snake during reset", "error", err)
 		return fmt.Errorf("не удалось создать змею: %w", err)
 	}
 
+	p.accessor.Logger().Info("snake created successfully")
 	p.snake = snake
 	p.spawnFood()
-
-	// TODO: p.loadLevel(1)
-
 	return nil
 }
 
 func (p *PlayingScene) spawnFood() {
-
-	cfg := p.accessor.Config()
-
 	occupiedCells := make(map[core.Position]bool)
 	for _, wall := range p.walls {
 		occupiedCells[wall.Position] = true
@@ -70,8 +70,8 @@ func (p *PlayingScene) spawnFood() {
 	}
 
 	freeCells := make([]core.Position, 0)
-	maxWidth := cfg.ScreenWidth / cfg.TileSize
-	maxHeight := cfg.ScreenHeight / cfg.TileSize
+	maxWidth := p.level.GridWidth
+	maxHeight := p.level.GridHeight
 	for i := 0; i < maxWidth; i++ {
 		for j := 0; j < maxHeight; j++ {
 			if (occupiedCells[core.Position{X: i, Y: j}] == false) {
@@ -84,20 +84,19 @@ func (p *PlayingScene) spawnFood() {
 		p.accessor.Logger().Warn("failed to created food: no free space left")
 	} else {
 		randomIndex := rand.IntN(len(freeCells))
-		p.food = NewFood(freeCells[randomIndex].X, freeCells[randomIndex].Y)
+		p.food = core.NewFood(freeCells[randomIndex].X, freeCells[randomIndex].Y)
 		p.accessor.Logger().Info("new food created", "position X", freeCells[randomIndex].X, "position Y", freeCells[randomIndex].Y)
 	}
 }
 
 func (p *PlayingScene) Update() (core.GameState, error) {
+	p.accessor.Logger().Info("updating playing scene")
 	if !p.snake.IsAlive {
 		return core.GameOverState, nil
 	}
 
-	err := p.handleInput()
-	if err != nil {
-		return 0, err
-	}
+	p.handleInput()
+
 	moved := p.snake.Update()
 	if moved {
 		state, err := p.checkCollisions()
@@ -109,7 +108,7 @@ func (p *PlayingScene) Update() (core.GameState, error) {
 	return core.GamePlayingState, nil
 }
 
-func (p *PlayingScene) handleInput() error {
+func (p *PlayingScene) handleInput() {
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) {
 		p.snake.SetNextDirection(core.Up)
 	} else if inpututil.IsKeyJustPressed(ebiten.KeyArrowDown) {
@@ -119,14 +118,23 @@ func (p *PlayingScene) handleInput() error {
 	} else if inpututil.IsKeyJustPressed(ebiten.KeyArrowRight) {
 		p.snake.SetNextDirection(core.Right)
 	} else if inpututil.IsKeyJustPressed(ebiten.KeyR) {
-		return p.accessor.Reset()
+		err := p.Reset()
+		if err != nil {
+			p.accessor.Logger().Error("failed to reset game", err)
+			return
+		}
+		err = p.accessor.Reset()
+		if err != nil {
+			p.accessor.Logger().Error("failed to reset game", err)
+		}
 	}
-	return nil
 }
 
 func (p *PlayingScene) checkCollisions() (core.GameState, error) {
 	logger := p.accessor.Logger()
+	logger.Info("checking collisions")
 	cfg := p.accessor.Config()
+	level := p.level
 
 	for _, wall := range p.walls {
 		if wall.Position == p.snake.Body[0].Position {
@@ -136,11 +144,11 @@ func (p *PlayingScene) checkCollisions() (core.GameState, error) {
 		}
 	}
 
-	if p.snake.Body[0].X < 0 || p.snake.Body[0].X >= cfg.ScreenWidth/cfg.TileSize {
+	if p.snake.Body[0].X < 0 || p.snake.Body[0].X >= level.GridWidth {
 		p.snake.IsAlive = false
 		logger.Info("snake crashed in border")
 	}
-	if p.snake.Body[0].Y < 0 || p.snake.Body[0].Y >= cfg.ScreenHeight/cfg.TileSize {
+	if p.snake.Body[0].Y < 0 || p.snake.Body[0].Y >= level.GridHeight {
 		p.snake.IsAlive = false
 		logger.Info("snake crashed in border")
 	}
@@ -153,20 +161,18 @@ func (p *PlayingScene) checkCollisions() (core.GameState, error) {
 			p.snake.DecreaseMoveInterval(cfg.SpeedIncreaseAmount)
 			logger.Info("change snake speed")
 		}
+
 		p.spawnFood()
 	} else {
-		err := p.snake.cutTail()
+		err := p.snake.CutTail()
 		if err != nil {
 			return 0, err
 		}
 	}
 
-	for i := 1; i < len(p.snake.Body); i++ {
-		if p.snake.Body[i].Position == p.snake.Body[0].Position {
-			p.snake.IsAlive = false
-			logger.Info("snake crashed in own body")
-			break
-		}
+	p.snake.CheckCollisionsWithSelf()
+	if p.snake.IsAlive == false {
+		logger.Info("snake crashed in its body")
 	}
 
 	if p.snake.IsAlive == false {
@@ -180,12 +186,24 @@ func (p *PlayingScene) Draw(screen *ebiten.Image) {
 	cfg := p.accessor.Config()
 	assets := p.accessor.Assets()
 
-	screen.Fill(color.NRGBA{R: 0x10, G: 0x10, B: 0x10, A: 0xff})
+	screen.Fill(color.RGBA{R: 5, G: 5, B: 15, A: 255})
+
+	fieldWidthInPixels := float64(p.level.GridWidth * cfg.TileSize)
+	fieldHeightInPixels := float64(p.level.GridHeight * cfg.TileSize)
 
 	topBarHeight := float64(cfg.TopBarHeight)
+	ui.DrawRectangle(
+		screen,
+		assets,
+		0,
+		topBarHeight,
+		fieldWidthInPixels,
+		fieldHeightInPixels,
+		color.NRGBA{R: 0x10, G: 0x10, B: 0x10, A: 0xff},
+	)
 
 	opBar := &ebiten.DrawImageOptions{}
-	opBar.GeoM.Scale(float64(cfg.ScreenWidth), topBarHeight) // Растягиваем 1x1 пиксель
+	opBar.GeoM.Scale(float64(cfg.ScreenWidth), topBarHeight)
 	screen.DrawImage(assets.WhitePixel, opBar)
 
 	scoreStr := fmt.Sprintf("SCORE: %d", p.accessor.Score())
@@ -200,8 +218,7 @@ func (p *PlayingScene) Draw(screen *ebiten.Image) {
 	}
 
 	p.drawFood(screen)
-
-	// TODO: Рисовать стены
+	p.drawWalls(screen)
 }
 
 func (p *PlayingScene) drawSnake(screen *ebiten.Image) {
@@ -265,12 +282,22 @@ func (p *PlayingScene) drawSnake(screen *ebiten.Image) {
 func (p *PlayingScene) drawFood(screen *ebiten.Image) {
 	cfg := p.accessor.Config()
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(p.food.Position.X*cfg.TileSize), float64(p.food.Position.Y*cfg.TileSize)+float64(cfg.TopBarHeight))
+	op.GeoM.Translate(float64(p.food.X*cfg.TileSize), float64(p.food.Y*cfg.TileSize)+float64(cfg.TopBarHeight))
 	img := p.accessor.Assets().Apple
 	screen.DrawImage(img, op)
-
 }
 
-func (s *PlayingScene) OnEnter() {
-	// TODO
+func (p *PlayingScene) drawWalls(screen *ebiten.Image) {
+	cfg := p.accessor.Config()
+	for _, wall := range p.walls {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(wall.X*cfg.TileSize), float64(wall.Y*cfg.TileSize)+float64(cfg.TopBarHeight))
+		img := p.accessor.Assets().Wall
+		screen.DrawImage(img, op)
+	}
+}
+
+func (p *PlayingScene) OnEnter() {
+	p.accessor.Logger().Info("Entering playing scene", "level", p.level.Name)
+	// p.isPaused = false
 }

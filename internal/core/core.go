@@ -9,6 +9,7 @@ const (
 	GamePlayingState
 	GamePauseState
 	GameOverState
+	LevelCreateState
 	BestScoresState
 )
 

@@ -12,13 +12,16 @@ import (
 type GameOverScene struct {
 	accessor GameAccessor
 
-	nextState core.GameState
-	button    *ui.Button
+	level *core.Level
+
+	nextState     core.GameState
+	newGameButton *ui.Button
 }
 
-func NewGameOverScene(accessor GameAccessor) *GameOverScene {
+func NewGameOverScene(accessor GameAccessor, level *core.Level) *GameOverScene {
 	scene := &GameOverScene{
 		accessor:  accessor,
+		level:     level,
 		nextState: core.GameOverState,
 	}
 
@@ -32,12 +35,12 @@ func NewGameOverScene(accessor GameAccessor) *GameOverScene {
 		50,
 		"NEW GAME",
 		func() {
-			accessor.Reset()
+			accessor.StartGame(level)
 			scene.nextState = core.GamePlayingState
 		},
 	)
 
-	scene.button = button
+	scene.newGameButton = button
 
 	return scene
 }
@@ -92,11 +95,11 @@ func (s *GameOverScene) Draw(screen *ebiten.Image) {
 	opField.ColorScale.Scale(0.1, 0.1, 0.1, 1) // Темно-серый
 	screen.DrawImage(assets.WhitePixel, opField)
 
-	s.button.Draw(screen, assets)
+	s.newGameButton.Draw(screen, assets)
 }
 
 func (s *GameOverScene) Update() (core.GameState, error) {
-	s.button.Update()
+	s.newGameButton.Update()
 	return s.nextState, nil
 }
 

@@ -22,7 +22,6 @@ type Game struct {
 
 	scenes       map[core.GameState]scenes.Scene
 	currentScene scenes.Scene
-	playingScene *scenes.PlayingScene
 }
 
 func (g *Game) Config() *config.Config {
@@ -52,21 +51,13 @@ func NewGame(cfg *config.Config, assets *assets.Assets) (*Game, error) {
 		logger: cfg.Logger,
 	}
 
-	playingScene, err := scenes.NewPlayingScene(g)
-
-	if err != nil {
-		return nil, err
-	}
-
-	gameOverScene := scenes.NewGameOverScene(g)
+	mainMenuScene := scenes.NewMainMenuScene(g)
 
 	g.scenes = map[core.GameState]scenes.Scene{
-		core.GamePlayingState: playingScene,
-		core.GameOverState:    gameOverScene,
+		core.MainMenuState: mainMenuScene,
 	}
 
-	g.currentScene = playingScene
-	g.playingScene = playingScene
+	g.currentScene = mainMenuScene
 	g.currentScene.OnEnter()
 
 	if err := g.Reset(); err != nil {
@@ -82,7 +73,6 @@ func NewGame(cfg *config.Config, assets *assets.Assets) (*Game, error) {
 				"initial_speed", cfg.InitialSpeed,
 			),
 		)
-
 	}
 	return g, nil
 }
@@ -90,14 +80,32 @@ func NewGame(cfg *config.Config, assets *assets.Assets) (*Game, error) {
 func (g *Game) Reset() error {
 	g.score = 0
 	g.gameTime = 0
-	err := g.playingScene.Reset()
+	return nil
+}
+
+func (g *Game) StartGame(level *core.Level) {
+	g.logger.Info("start game command received", "level_name", level.Name)
+
+	playingScene, err := scenes.NewPlayingScene(g, level)
 	if err != nil {
-		g.logger.Warn("failed to restart game")
-		return err
+		g.logger.Error("failed to start level", "level_name", level.Name)
+		return
 	}
 
-	g.logger.Info("game restarted successfully")
-	return nil
+	err = g.Reset()
+	if err != nil {
+		g.logger.Error("failed to reset level", "error", err)
+		return
+	}
+
+	playingScene.OnEnter()
+	g.scenes[core.GamePlayingState] = playingScene
+	g.currentScene = playingScene
+
+	gameOverScene := scenes.NewGameOverScene(g, level)
+	g.scenes[core.GameOverState] = gameOverScene
+
+	g.logger.Info("switched to playing scene")
 }
 
 func (g *Game) Update() error {
@@ -116,7 +124,9 @@ func (g *Game) Update() error {
 
 		g.currentScene.OnEnter()
 	}
-	if g.currentScene == g.playingScene {
+
+	_, ok := g.currentScene.(*scenes.PlayingScene)
+	if ok {
 		g.gameTime += time.Second / time.Duration(ebiten.TPS())
 	}
 	return nil

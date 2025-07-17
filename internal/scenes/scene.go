@@ -26,4 +26,5 @@ type GameAccessor interface {
 	// Методы для управления состоянием
 	NotifyFoodEaten() (shouldIncreaseSpeed bool)
 	Reset() error
+	StartGame(level *core.Level)
 }

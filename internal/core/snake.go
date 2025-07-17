@@ -1,22 +1,21 @@
-package scenes
+package core
 
 import (
 	"fmt"
-	"snake-game/internal/core"
 )
 
 type SnakeSegment struct {
-	core.Position
+	Position
 }
 
 func NewSnakeSegment(x, y int) *SnakeSegment {
-	return &SnakeSegment{core.Position{X: x, Y: y}}
+	return &SnakeSegment{Position{X: x, Y: y}}
 }
 
 type Snake struct {
 	Body          []SnakeSegment
-	Direction     core.Direction
-	NextDirection core.Direction
+	Direction     Direction
+	NextDirection Direction
 
 	IsAlive bool
 
@@ -41,8 +40,8 @@ func NewSnake(x, y, snakeLength, moveInterval, minMoveInterval int) (*Snake, err
 
 	snake := Snake{
 		Body:            body,
-		Direction:       core.Right,
-		NextDirection:   core.Right,
+		Direction:       Right,
+		NextDirection:   Right,
 		IsAlive:         true,
 		moveInterval:    moveInterval,
 		minMoveInterval: minMoveInterval,
@@ -52,24 +51,24 @@ func NewSnake(x, y, snakeLength, moveInterval, minMoveInterval int) (*Snake, err
 	return &snake, nil
 }
 
-func (s *Snake) SetNextDirection(direction core.Direction) {
+func (s *Snake) SetNextDirection(direction Direction) {
 	var isOpposite = false
 
 	switch direction {
-	case core.Up:
-		if s.Direction == core.Down {
+	case Up:
+		if s.Direction == Down {
 			isOpposite = true
 		}
-	case core.Down:
-		if s.Direction == core.Up {
+	case Down:
+		if s.Direction == Up {
 			isOpposite = true
 		}
-	case core.Left:
-		if s.Direction == core.Right {
+	case Left:
+		if s.Direction == Right {
 			isOpposite = true
 		}
-	case core.Right:
-		if s.Direction == core.Left {
+	case Right:
+		if s.Direction == Left {
 			isOpposite = true
 		}
 	}
@@ -93,20 +92,20 @@ func (s *Snake) extendForward() {
 	oldHead := s.Body[0]
 	newHeadPos := oldHead.Position
 	switch s.Direction {
-	case core.Up:
+	case Up:
 		newHeadPos.Y--
-	case core.Left:
+	case Left:
 		newHeadPos.X--
-	case core.Down:
+	case Down:
 		newHeadPos.Y++
-	case core.Right:
+	case Right:
 		newHeadPos.X++
 	}
 	newHead := SnakeSegment{newHeadPos}
 	s.Body = append([]SnakeSegment{newHead}, s.Body...)
 }
 
-func (s *Snake) cutTail() error {
+func (s *Snake) CutTail() error {
 	if len(s.Body) > 1 {
 		s.Body = s.Body[0 : len(s.Body)-1]
 		return nil
@@ -116,4 +115,13 @@ func (s *Snake) cutTail() error {
 
 func (s *Snake) DecreaseMoveInterval(x int) {
 	s.moveInterval = max(s.moveInterval-x, s.minMoveInterval)
+}
+
+func (s *Snake) CheckCollisionsWithSelf() {
+	for i := 1; i < len(s.Body); i++ {
+		if s.Body[i].Position == s.Body[0].Position {
+			s.IsAlive = false
+			break
+		}
+	}
 }

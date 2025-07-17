@@ -23,8 +23,8 @@ type Assets struct {
 	Apple           *ebiten.Image
 	Wall            *ebiten.Image
 
-	UIFont font.Face
-
+	UIFont     font.Face
+	TitleFont  font.Face
 	WhitePixel *ebiten.Image
 }
 
@@ -85,6 +85,14 @@ func Load(skin string) (*Assets, error) {
 	const dpi = 72
 	assets.UIFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
 		Size:    16,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		return nil, err
+	}
+	assets.TitleFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    25,
 		DPI:     dpi,
 		Hinting: font.HintingFull,
 	})

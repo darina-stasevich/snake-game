@@ -164,6 +164,8 @@ func (s *MainMenuScene) OnEnter() {
 	if err != nil {
 		s.accessor.Logger().Error("failed to scan for levels", "error", err)
 	}
+
+	s.nextState = core.MainMenuState
 }
 
 func (s *MainMenuScene) newGame() {
@@ -203,8 +205,8 @@ func (s *MainMenuScene) newGame() {
 }
 
 func (s *MainMenuScene) createLevel() {
-	s.accessor.Logger().Info("go to createLevelScene (not implement)")
-	// s.nextState = core.LevelCreateState
+	s.accessor.Logger().Info("go to createLevelScene")
+	s.nextState = core.LevelCreateState
 }
 
 func (s *MainMenuScene) ranking() {

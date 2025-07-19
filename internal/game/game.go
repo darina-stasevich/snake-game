@@ -52,9 +52,11 @@ func NewGame(cfg *config.Config, assets *assets.Assets) (*Game, error) {
 	}
 
 	mainMenuScene := scenes.NewMainMenuScene(g)
+	createLevelScene := scenes.NewCreateLevelScene(g)
 
 	g.scenes = map[core.GameState]scenes.Scene{
-		core.MainMenuState: mainMenuScene,
+		core.MainMenuState:    mainMenuScene,
+		core.LevelCreateState: createLevelScene,
 	}
 
 	g.currentScene = mainMenuScene

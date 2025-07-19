@@ -9,10 +9,11 @@ type Level struct {
 	Walls []Wall `json:"walls"`
 }
 
-func NewEmptyLevel(width, height int) *Level {
+func NewLevel(name string, width, height int, walls []Wall) *Level {
 	return &Level{
-		Name:       "unknown",
+		Name:       name,
 		GridWidth:  width,
 		GridHeight: height,
+		Walls:      walls,
 	}
 }

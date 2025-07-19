@@ -210,6 +210,6 @@ func (s *MainMenuScene) createLevel() {
 }
 
 func (s *MainMenuScene) ranking() {
-	s.accessor.Logger().Info("go to rankingScene (not implement)")
-	// s.nextState = core.BestScoresState
+	s.accessor.Logger().Info("go to rankingScene")
+	s.nextState = core.BestScoresState
 }

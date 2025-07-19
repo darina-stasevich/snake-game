@@ -6,6 +6,7 @@ import (
 	"snake-game/internal/assets"
 	"snake-game/internal/config"
 	"snake-game/internal/core"
+	"snake-game/internal/storage"
 	"time"
 )
 
@@ -20,6 +21,7 @@ type GameAccessor interface {
 	Config() *config.Config
 	Assets() *assets.Assets
 	Logger() *slog.Logger
+	Repository() storage.Repository
 	Score() int
 	GameTime() time.Duration
 

@@ -37,6 +37,10 @@ func (g *Game) Logger() *slog.Logger {
 	return g.logger
 }
 
+func (g *Game) Repository() storage.Repository {
+	return g.repo
+}
+
 func (g *Game) Score() int {
 	return g.score
 }
@@ -55,10 +59,12 @@ func NewGame(cfg *config.Config, assets *assets.Assets, repo storage.Repository)
 
 	mainMenuScene := scenes.NewMainMenuScene(g)
 	createLevelScene := scenes.NewCreateLevelScene(g)
+	rankingScene := scenes.NewRankingScene(g)
 
 	g.scenes = map[core.GameState]scenes.Scene{
 		core.MainMenuState:    mainMenuScene,
 		core.LevelCreateState: createLevelScene,
+		core.BestScoresState:  rankingScene,
 	}
 
 	g.currentScene = mainMenuScene

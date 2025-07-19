@@ -1,6 +1,7 @@
 package scenes
 
 import (
+	"context"
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -8,7 +9,9 @@ import (
 	"image"
 	"image/color"
 	"snake-game/internal/core"
+	"snake-game/internal/storage"
 	"snake-game/internal/ui"
+	"time"
 )
 
 const (
@@ -27,7 +30,8 @@ type GameOverScene struct {
 	saveScoreButton *ui.Button
 	nameFieldRect   image.Rectangle
 
-	playerName []rune
+	isRecordSaved bool
+	playerName    []rune
 }
 
 func NewGameOverScene(accessor GameAccessor, level *core.Level) *GameOverScene {
@@ -73,7 +77,16 @@ func NewGameOverScene(accessor GameAccessor, level *core.Level) *GameOverScene {
 		40,
 		"S",
 		func() {
-			panic("implement me")
+			if scene.isRecordSaved == true {
+				return
+			}
+			record := storage.NewRecord(string(scene.playerName), scene.accessor.Score(), scene.accessor.GameTime(), scene.level.Name, time.Now())
+			err := scene.accessor.Repository().SaveRecord(context.Background(), record)
+			if err != nil {
+				scene.accessor.Logger().Error("failed to save record", "error", err)
+			} else {
+				scene.isRecordSaved = true
+			}
 		})
 
 	scene.saveScoreButton = saveButton
@@ -158,4 +171,5 @@ func (s *GameOverScene) handleInput() {
 
 func (s *GameOverScene) OnEnter() {
 	s.nextState = core.GameOverState
+	s.isRecordSaved = false
 }

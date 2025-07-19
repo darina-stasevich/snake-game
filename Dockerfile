@@ -35,5 +35,6 @@ RUN apt-get -y update && apt-get -y install \
 WORKDIR /app
 
 COPY --from=builder /app/snake-game .
+COPY --from=builder /app/levels ./levels/
 
 CMD ["./snake-game"]

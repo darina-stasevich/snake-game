@@ -1,26 +1,29 @@
 
-1. clone repo
+1. Клонируйте репозиторий и перейдите в папку с проектом
 
 ```bash
 git clone https://github.com/darina-stasevich/snake-game.git
 cd snake-game
 ```
 
-2. go to project folder, then build docker image
+2. В проекте используется `.env` файл для хранения данных для подключения к базе данных. Скопируйте шаблон, чтобы создать свой файл конфигурации.
 
 ```bash
-docker build -t snake-game:latest .
+cp .env.example .env
 ```
+3. Разрешите подключению к экрану
 
-3. start game
-
-(for Linux using Wayland)
 ```bash
 xhost +local:
-docker run -it --rm --net=host -e DISPLAY=$DISPLAY -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY snake-game:latest
 ```
-(for Linux using X11)
+
+4. Запустите игру
+
 ```bash
-xhost +local:
-docker run -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix snake-game:latest
+docker-compose up --build
+```
+
+5. Для остановки игры - Ctrl+C в терминале, затем
+```bash
+docker-compose down
 ```

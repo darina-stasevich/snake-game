@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"log/slog"
+	"time"
 )
 
 type PostgresRepository struct {
@@ -12,24 +14,34 @@ type PostgresRepository struct {
 	logger *slog.Logger
 }
 
-func NewPostgresRepository(connStr string, log *slog.Logger) (*PostgresRepository, error) {
-	db, err := sql.Open("postgres", connStr)
+func NewPostgresRepository(connStr string, log *slog.Logger) (Repository, error) {
+	log.Debug("im in NewPostgresRepository")
+	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
 
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+	log.Debug("2. im in NewPostgresRepository")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel() // Важно вызывать cancel, чтобы освободить ресурсы контекста
+
+	if err := db.PingContext(ctx); err != nil {
+		return nil, fmt.Errorf("failed to ping database within 5s: %w", err)
 	}
+	log.Debug("3. im in NewPostgresRepository")
 
 	repo := &PostgresRepository{
 		db:     db,
 		logger: log,
 	}
 
+	log.Debug("4. im in NewPostgresRepository")
+
 	if err := repo.initSchema(); err != nil {
 		return nil, fmt.Errorf("failed to initialize schema: %w", err)
 	}
+
+	log.Debug("5. im in NewPostgresRepository")
 
 	log.Info("database created, schema initialized")
 	return repo, nil
@@ -40,10 +52,10 @@ func (r *PostgresRepository) initSchema() error {
     id SERIAL PRIMARY KEY,
     player_name VARCHAR(50) NOT NULL,
     score INT NOT NULL,
-    time_in_seconds INT NOT_NULL,
+    time_in_seconds INT NOT NULL,
     level_name VARCHAR(50) NOT NULL,
-created_at TIMESTAMP WITH TIMEZONE DEFAULT CURRENT_TIMESTAMP
-		)`
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	)`
 	_, err := r.db.Exec(query)
 	if err != nil {
 		return err
@@ -54,7 +66,7 @@ created_at TIMESTAMP WITH TIMEZONE DEFAULT CURRENT_TIMESTAMP
 func (r *PostgresRepository) SaveRecord(ctx context.Context, record Record) error {
 	query := `INSERT INTO records (player_name, score, time_in_seconds, level_name) VALUES ($1, $2, $3, $4)`
 
-	result, err := r.db.ExecContext(ctx, query, record.playerName, record.score, int(record.time.Seconds()), record.levelName)
+	result, err := r.db.ExecContext(ctx, query, record.PlayerName, record.Score, int(record.Time.Seconds()), record.LevelName)
 	if err != nil {
 		r.logger.Error("failed to save record", "error", err)
 		return err
@@ -69,7 +81,7 @@ func (r *PostgresRepository) SaveRecord(ctx context.Context, record Record) erro
 		return nil
 	}
 
-	r.logger.Info("record saved successfully", "player", record.playerName, "score", record.score, "time_in_sec", record.time, "level", record.levelName)
+	r.logger.Info("record saved successfully", "player", record.PlayerName, "score", record.Score, "time_in_sec", record.Time, "level", record.LevelName)
 	return nil
 
 }

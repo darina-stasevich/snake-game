@@ -7,11 +7,11 @@ import (
 
 type Record struct {
 	ID         int64
-	playerName string
-	score      int
-	time       time.Duration
-	levelName  string
-	createdAt  time.Time
+	PlayerName string
+	Score      int
+	Time       time.Duration
+	LevelName  string
+	CreatedAt  time.Time
 }
 
 type Repository interface {

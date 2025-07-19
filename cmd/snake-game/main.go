@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"log/slog"
 	"os"
 	"snake-game/internal/assets"
@@ -13,6 +14,7 @@ import (
 )
 
 func main() {
+
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
@@ -38,20 +40,24 @@ func main() {
 		logger.Info("Assets successfully loaded")
 	}
 
+	if err := godotenv.Load(); err != nil {
+		logger.Warn("failed to load from .env", "error", err)
+	}
+
+	var repo storage.Repository
+
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
 		logger.Warn("DATABASE_URL environment variable is not set. Running without database.")
 	}
 
-	var repo storage.Repository
-
 	if connStr != "" {
 		repo, err = storage.NewPostgresRepository(connStr, logger)
 		if err != nil {
 			logger.Error("failed to connect to database", "error", err)
-			os.Exit(1) // Выходим, если не можем подключиться к БД
+			os.Exit(1)
 		}
-		defer repo.Close() // Гарантируем закрытие соединения при выходе
+		defer repo.Close()
 	}
 
 	g, err := game.NewGame(cfg, assets, repo)

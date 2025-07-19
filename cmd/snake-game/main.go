@@ -6,6 +6,7 @@ import (
 	"snake-game/internal/assets"
 	"snake-game/internal/config"
 	"snake-game/internal/game"
+	"snake-game/internal/storage"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -37,10 +38,25 @@ func main() {
 		logger.Info("Assets successfully loaded")
 	}
 
-	// 3. Создаем экземпляр игры
-	g, err := game.NewGame(cfg, assets)
+	connStr := os.Getenv("DATABASE_URL")
+	if connStr == "" {
+		logger.Warn("DATABASE_URL environment variable is not set. Running without database.")
+	}
+
+	var repo storage.Repository
+
+	if connStr != "" {
+		repo, err = storage.NewPostgresRepository(connStr, logger)
+		if err != nil {
+			logger.Error("failed to connect to database", "error", err)
+			os.Exit(1) // Выходим, если не можем подключиться к БД
+		}
+		defer repo.Close() // Гарантируем закрытие соединения при выходе
+	}
+
+	g, err := game.NewGame(cfg, assets, repo)
 	if err != nil {
-		logger.Error("Failed to initialize game", "err", err)
+		logger.Error("failed to create game", "err", err)
 		os.Exit(1)
 	} else {
 		logger.Info("Game successfully initialized")

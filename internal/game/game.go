@@ -8,17 +8,18 @@ import (
 	"snake-game/internal/config"
 	"snake-game/internal/core"
 	"snake-game/internal/scenes"
+	"snake-game/internal/storage"
 	"time"
 )
 
 type Game struct {
 	cfg    *config.Config
 	assets *assets.Assets
+	logger *slog.Logger
+	repo   storage.Repository
 
 	score    int
 	gameTime time.Duration
-
-	logger *slog.Logger
 
 	scenes       map[core.GameState]scenes.Scene
 	currentScene scenes.Scene
@@ -44,11 +45,12 @@ func (g *Game) GameTime() time.Duration {
 	return g.gameTime
 }
 
-func NewGame(cfg *config.Config, assets *assets.Assets) (*Game, error) {
+func NewGame(cfg *config.Config, assets *assets.Assets, repo storage.Repository) (*Game, error) {
 	g := &Game{
 		cfg:    cfg,
 		assets: assets,
 		logger: cfg.Logger,
+		repo:   repo,
 	}
 
 	mainMenuScene := scenes.NewMainMenuScene(g)

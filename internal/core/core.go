@@ -7,7 +7,6 @@ type GameState int
 const (
 	MainMenuState GameState = iota
 	GamePlayingState
-	GamePauseState
 	GameOverState
 	LevelCreateState
 	BestScoresState

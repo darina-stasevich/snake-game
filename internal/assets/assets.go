@@ -69,8 +69,10 @@ func Load(skin string) (*Assets, error) {
 	if err != nil {
 		return nil, err
 	}
-	assets.Wall = ebiten.NewImage(20, 20)
-	assets.Wall.Fill(color.RGBA{R: 0x88, G: 0x88, B: 0x88, A: 0xff})
+	assets.Wall, err = loadImage(filepath.Join(skinPath, "wall.png"))
+	if err != nil {
+		return nil, err
+	}
 
 	fontData, err := assetsFS.ReadFile("fonts/PressStart2P-Regular.ttf")
 	if err != nil {

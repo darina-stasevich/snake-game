@@ -291,13 +291,25 @@ func (p *PlayingScene) drawWalls(screen *ebiten.Image) {
 	cfg := p.accessor.Config()
 	for _, wall := range p.walls {
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(float64(wall.X*cfg.TileSize), float64(wall.Y*cfg.TileSize)+float64(cfg.TopBarHeight))
 		img := p.accessor.Assets().Wall
+
+		originalWidth := img.Bounds().Dx()
+		originalHeight := img.Bounds().Dy()
+
+		var scaleX, scaleY float64
+		if originalWidth > 0 {
+			scaleX = float64(cfg.TileSize) / float64(originalWidth)
+		}
+		if originalHeight > 0 {
+			scaleY = float64(cfg.TileSize) / float64(originalHeight)
+		}
+
+		op.GeoM.Scale(scaleX, scaleY)
+		op.GeoM.Translate(float64(wall.X*cfg.TileSize), float64(wall.Y*cfg.TileSize)+float64(cfg.TopBarHeight))
 		screen.DrawImage(img, op)
 	}
 }
 
 func (p *PlayingScene) OnEnter() {
 	p.accessor.Logger().Info("Entering playing scene", "level", p.level.Name)
-	// p.isPaused = false
 }

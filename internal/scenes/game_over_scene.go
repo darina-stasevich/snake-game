@@ -3,10 +3,16 @@ package scenes
 import (
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
+	"image"
 	"image/color"
 	"snake-game/internal/core"
 	"snake-game/internal/ui"
+)
+
+const (
+	MaxPlayerName = 13
 )
 
 type GameOverScene struct {
@@ -14,8 +20,14 @@ type GameOverScene struct {
 
 	level *core.Level
 
-	nextState     core.GameState
-	newGameButton *ui.Button
+	nextState core.GameState
+
+	newGameButton   *ui.Button
+	mainMenuButton  *ui.Button
+	saveScoreButton *ui.Button
+	nameFieldRect   image.Rectangle
+
+	playerName []rune
 }
 
 func NewGameOverScene(accessor GameAccessor, level *core.Level) *GameOverScene {
@@ -28,9 +40,9 @@ func NewGameOverScene(accessor GameAccessor, level *core.Level) *GameOverScene {
 	cfg := scene.accessor.Config()
 	centerX := float64(cfg.ScreenWidth) / 2
 
-	button := ui.NewButton(
+	newGameButton := ui.NewButton(
 		centerX-120,
-		float64(cfg.ScreenHeight/2)+80,
+		float64(cfg.ScreenHeight/2)+90,
 		240,
 		50,
 		"NEW GAME",
@@ -40,7 +52,37 @@ func NewGameOverScene(accessor GameAccessor, level *core.Level) *GameOverScene {
 		},
 	)
 
-	scene.newGameButton = button
+	scene.newGameButton = newGameButton
+
+	mainMenuButton := ui.NewButton(
+		centerX-120,
+		float64(cfg.ScreenHeight/2)+145,
+		240,
+		50,
+		"MAIN MENU",
+		func() {
+			scene.nextState = core.MainMenuState
+		})
+
+	scene.mainMenuButton = mainMenuButton
+
+	saveButton := ui.NewButton(
+		centerX+130,
+		float64(cfg.ScreenHeight/2)+38,
+		40,
+		40,
+		"S",
+		func() {
+			panic("implement me")
+		})
+
+	scene.saveScoreButton = saveButton
+
+	inputFieldWidth := 240.0
+	inputFieldHeight := 40.0
+	inputX := centerX - 120
+	inputY := float64(cfg.ScreenHeight/2) + 38
+	scene.nameFieldRect = image.Rect(int(inputX), int(inputY), int(inputX+inputFieldWidth), int(inputY+inputFieldHeight))
 
 	return scene
 }
@@ -78,29 +120,40 @@ func (s *GameOverScene) Draw(screen *ebiten.Image) {
 	timeY := scoreY + 25
 	text.Draw(screen, timeStr, uiFont, timeX, timeY, color.White)
 
-	inputFieldWidth := 240.0
-	inputFieldHeight := 40.0
-	inputX := float64(centerX) - inputFieldWidth/2
-	inputY := float64(timeY) + 40
-
-	opBorder := &ebiten.DrawImageOptions{}
-	opBorder.GeoM.Scale(inputFieldWidth+4, inputFieldHeight+4)
-	opBorder.GeoM.Translate(inputX-2, inputY-2)
-	opBorder.ColorScale.Scale(0.5, 0.5, 0.5, 1) // Серый цвет
-	screen.DrawImage(assets.WhitePixel, opBorder)
-
-	opField := &ebiten.DrawImageOptions{}
-	opField.GeoM.Scale(inputFieldWidth, inputFieldHeight)
-	opField.GeoM.Translate(inputX, inputY)
-	opField.ColorScale.Scale(0.1, 0.1, 0.1, 1) // Темно-серый
-	screen.DrawImage(assets.WhitePixel, opField)
+	s.drawInputField(screen)
 
 	s.newGameButton.Draw(screen, assets)
+	s.mainMenuButton.Draw(screen, assets)
+	s.saveScoreButton.Draw(screen, assets)
+}
+
+func (s *GameOverScene) drawInputField(screen *ebiten.Image) {
+	assets := s.accessor.Assets()
+	rect := s.nameFieldRect
+
+	ui.DrawRectangle(screen, assets, float64(rect.Min.X-2), float64(rect.Min.Y-2), float64(rect.Dx()+4), float64(rect.Dy()+4), color.Gray{Y: 100})
+	ui.DrawRectangle(screen, assets, float64(rect.Min.X), float64(rect.Min.Y), float64(rect.Dx()), float64(rect.Dy()), color.Black)
+	text.Draw(screen, string(s.playerName), assets.UIFont, rect.Min.X+15, rect.Min.Y+28, color.White)
 }
 
 func (s *GameOverScene) Update() (core.GameState, error) {
+	s.handleInput()
 	s.newGameButton.Update()
+	s.mainMenuButton.Update()
+	s.saveScoreButton.Update()
 	return s.nextState, nil
+}
+
+func (s *GameOverScene) handleInput() {
+	s.playerName = ebiten.AppendInputChars(s.playerName)
+	if len(s.playerName) > MaxPlayerName {
+		s.playerName = s.playerName[0:MaxPlayerName]
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyBackspace) {
+		if len(s.playerName) > 0 {
+			s.playerName = s.playerName[0 : len(s.playerName)-1]
+		}
+	}
 }
 
 func (s *GameOverScene) OnEnter() {

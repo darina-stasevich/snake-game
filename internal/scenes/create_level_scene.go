@@ -229,12 +229,14 @@ func (c *CreateLevelScene) Draw(screen *ebiten.Image) {
 		if !isSet {
 			continue
 		}
-		ui.DrawRectangle(screen, assets,
-			gridOriginX+float64(pos.X*cfg.TileSize),
-			gridOriginY+float64(pos.Y*cfg.TileSize),
-			float64(cfg.TileSize), float64(cfg.TileSize),
-			color.Gray{Y: 120},
-		)
+		if pos.X < c.width && pos.Y < c.height {
+			ui.DrawRectangle(screen, assets,
+				gridOriginX+float64(pos.X*cfg.TileSize),
+				gridOriginY+float64(pos.Y*cfg.TileSize),
+				float64(cfg.TileSize), float64(cfg.TileSize),
+				color.Gray{Y: 120},
+			)
+		}
 	}
 
 }
@@ -302,7 +304,9 @@ func (c *CreateLevelScene) handleInput() {
 			cursorX, cursorY := ebiten.CursorPosition()
 			tileX := cursorX / c.accessor.Config().TileSize
 			tileY := cursorY / c.accessor.Config().TileSize
-			c.walls[core.Position{X: tileX, Y: tileY}] = !c.walls[core.Position{X: tileX, Y: tileY}]
+			if tileX < c.width && tileY < c.height {
+				c.walls[core.Position{X: tileX, Y: tileY}] = !c.walls[core.Position{X: tileX, Y: tileY}]
+			}
 		}
 	case "name":
 		inputChars := ebiten.AppendInputChars(c.LevelName)
